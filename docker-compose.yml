@@ -1,0 +1,87 @@
+version: '2'
+services:
+  zk1:
+    image: endocode/zookeeper
+    ports: 
+      - "2181"
+      - "2888"
+      - "3888"
+    networks:
+      - storm
+    environment:
+      - ZK_ID=1
+      - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
+  zk2:
+    image: endocode/zookeeper
+    ports: 
+      - "2181"
+      - "2888"
+      - "3888"
+    networks:
+      - storm
+    environment:
+      - ZK_ID=2
+      - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
+  zk3:
+    image: endocode/zookeeper
+    ports: 
+      - "2181"
+      - "2888"
+      - "3888"
+    networks:
+      - storm
+    environment:
+      - ZK_ID=3
+      - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
+  nimbus:
+    image: wurstmeister/storm-nimbus
+    ports:
+      - "6627"
+      - "3772"
+      - "3773"
+      - "3774"
+    networks:
+      - storm
+    environment:
+      - NIMBUS_PORT_6627_TCP_ADDR=nimbus
+      - ZK_PORT_2181_TCP_ADDR=zk1 zk2 zk3
+    depends_on:
+      - zk1
+      - zk2
+      - zk3
+  supervisor:
+    image: wurstmeister/storm-supervisor
+    ports:
+      - "6700"
+      - "6701"
+      - "6702"
+      - "6703"
+      - "8000"
+    networks:
+      - storm
+    environment:
+      - NIMBUS_PORT_6627_TCP_ADDR=nimbus
+      - ZK_PORT_2181_TCP_ADDR=zk1 zk2 zk3
+    depends_on:
+      - zk1
+      - zk2
+      - zk3
+      - nimbus
+  ui:
+    image: wurstmeister/storm-ui
+    ports:
+      - "8080:8080"
+    networks:
+      - storm
+    environment:
+      - NIMBUS_PORT_6627_TCP_ADDR=nimbus
+      - ZK_PORT_2181_TCP_ADDR=zk1 zk2 zk3
+    depends_on:
+      - zk1
+      - zk2
+      - zk3
+      - nimbus
+      - supervisor
+networks:
+  storm:
+    external: true

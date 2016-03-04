@@ -1,0 +1,21 @@
+storm.local.dir: "/mnt/storm"
+storm.log.dir: "/var/log/storm"
+
+nimbus.host: "%nimbus%"
+nimbus.seeds: "%nimbus%"
+nimbus.thrift.port: 6627
+
+drpc.port: 3772
+drpc.http.port: 3774
+drpc.https.port: -1
+drpc.invocations.port: 3773
+
+supervisor.slots.ports:
+    - 6700
+    - 6701
+    - 6702
+    - 6703
+
+logviewer.port: 8000
+
+storm.zookeeper.servers:
