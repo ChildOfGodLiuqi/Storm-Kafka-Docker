@@ -60,20 +60,27 @@
 
 
 ```bash
+# 1. Create a bridge network
+#    ref: https://docs.docker.com/engine/userguide/networking/dockernetworks/#a-bridge-network
+
+docker network create --driver bridge storm
+
+# 2. Enter the 'images' directory
+
 cd images
 
-# 1. To build the ZooKeeper image
+# 3. To build the ZooKeeper image
 docker build -t endocode/zookeeper zookeeper_docker
 
-# 2. To build the Kafka image
+# 4. To build the Kafka image
 docker build -t endocode/kafka kafka_docker
 
-# 3. To build the Storm images (nimbus, supervisor, ui)
+# 5. To build the Storm images (nimbus, supervisor, ui)
 cd storm_docker
 
 ./rebuild.sh
 
-# 4. Check the images in your local repository:
+# 6. Check the images in your local repository:
 docker images
 
 REPOSITORY                      TAG                 IMAGE ID            CREATED             SIZE
