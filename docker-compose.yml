@@ -1,7 +1,9 @@
+# https://endocode.com/blog/2015/04/22/building-a-stream-processing-pipeline-with-kafka-storm-and-cassandra-part-2-using-docker-containers/
 version: '2'
 services:
   zk1:
     container_name: zk1
+    hostname: zk1
     image: endocode/zookeeper
     ports: 
       - "2181"
@@ -12,9 +14,9 @@ services:
     environment:
       - ZK_ID=1
       - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
-    hostname: zk1
   zk2:
     container_name: zk2
+    hostname: zk2
     image: endocode/zookeeper
     ports: 
       - "2181"
@@ -25,9 +27,9 @@ services:
     environment:
       - ZK_ID=2
       - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
-    hostname: zk2
   zk3:
     container_name: zk3
+    hostname: zk3
     image: endocode/zookeeper
     ports: 
       - "2181"
@@ -38,9 +40,27 @@ services:
     environment:
       - ZK_ID=3
       - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
-    hostname: zk3
+  kafka1:
+    container_name: kafka1
+    hostname: kafka1
+    image: endocode/kafka
+    ports:
+      - "6667:6667"
+    networks:
+      - storm
+    environment:
+      - KAFKA_HEAP_OPTS=-Xmx64M -Xms64M
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=zk1:2181,zk2:2181,zk3:2181
+      - KAFKA_ADVERTISED_PORT=6667
+      - KAFKA_ADVERTISED_HOST_NAME=kafka1
+    depends_on:
+      - zk1
+      - zk2
+      - zk3
   nimbus:
     container_name: nimbus
+    hostname: nimbus
     image: wurstmeister/storm-nimbus
     ports:
       - "6627"
@@ -58,6 +78,7 @@ services:
       - zk3
   supervisor:
     container_name: supervisor
+    hostname: supervisor
     image: wurstmeister/storm-supervisor
     ports:
       - "6700"
@@ -77,6 +98,7 @@ services:
       - nimbus
   ui:
     container_name: ui
+    hostname: ui
     image: wurstmeister/storm-ui
     ports:
       - "8080:8080"
@@ -91,6 +113,30 @@ services:
       - zk3
       - nimbus
       - supervisor
+  ses:
+    container_name: ses
+    hostname: ses
+    image: desp0916/elasticsearch:1.7.4
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - storm
+    volumes:
+      - /root/docker/data/elasticsearch/1.7.4/config:/usr/share/elasticsearch/config
+      - /root/docker/data/elasticsearch/1.7.4:/usr/share/elasticsearch/data
+  ski:
+    container_name: ski
+    hostname: ski
+    image: kibana:4.1.4
+    ports:
+      - "5601:5601"
+    networks:
+      - storm
+    environment:
+      - ELASTICSEARCH_URL=http://ses:9200
+    depends_on:
+      - ses
 networks:
   storm:
     external: true
