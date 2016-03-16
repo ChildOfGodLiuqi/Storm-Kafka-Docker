@@ -6,64 +6,68 @@ services:
     hostname: zk1
     image: endocode/zookeeper
     ports: 
-      - "2181"
+      - "2181:2181"
       - "2888"
       - "3888"
     networks:
       - storm
     environment:
       - ZK_ID=1
-      - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
-  zk2:
-    container_name: zk2
-    hostname: zk2
-    image: endocode/zookeeper
-    ports: 
-      - "2181"
-      - "2888"
-      - "3888"
-    networks:
-      - storm
-    environment:
-      - ZK_ID=2
-      - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
-  zk3:
-    container_name: zk3
-    hostname: zk3
-    image: endocode/zookeeper
-    ports: 
-      - "2181"
-      - "2888"
-      - "3888"
-    networks:
-      - storm
-    environment:
-      - ZK_ID=3
-      - ZK_SERVERS=server.1=zk1:2888:3888 server.2=zk2:2888:3888 server.3=zk3:2888:3888
+      - ZK_SERVERS=server.1=zk1:2888:3888
   kafka1:
     container_name: kafka1
     hostname: kafka1
     image: endocode/kafka
     ports:
-      - "6667:6667"
+      - "9092:9092"
     networks:
       - storm
     environment:
       - KAFKA_HEAP_OPTS=-Xmx64M -Xms64M
       - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zk1:2181,zk2:2181,zk3:2181
-      - KAFKA_ADVERTISED_PORT=6667
+      - KAFKA_ZOOKEEPER_CONNECT=zk1:2181
+      - KAFKA_ADVERTISED_PORT=9092
       - KAFKA_ADVERTISED_HOST_NAME=kafka1
     depends_on:
       - zk1
-      - zk2
-      - zk3
+  kafka2:
+    container_name: kafka2
+    hostname: kafka2
+    image: endocode/kafka
+    ports:
+      - "9092"
+    networks:
+      - storm
+    environment:
+      - KAFKA_HEAP_OPTS=-Xmx64M -Xms64M
+      - KAFKA_BROKER_ID=2
+      - KAFKA_ZOOKEEPER_CONNECT=zk1:2181
+      - KAFKA_ADVERTISED_PORT=9092
+      - KAFKA_ADVERTISED_HOST_NAME=kafka2
+    depends_on:
+      - zk1
+  kafka3:
+    container_name: kafka3
+    hostname: kafka3
+    image: endocode/kafka
+    ports:
+      - "9092"
+    networks:
+      - storm
+    environment:
+      - KAFKA_HEAP_OPTS=-Xmx64M -Xms64M
+      - KAFKA_BROKER_ID=3
+      - KAFKA_ZOOKEEPER_CONNECT=zk1:2181
+      - KAFKA_ADVERTISED_PORT=9092
+      - KAFKA_ADVERTISED_HOST_NAME=kafka3
+    depends_on:
+      - zk1
   nimbus:
     container_name: nimbus
     hostname: nimbus
     image: wurstmeister/storm-nimbus
     ports:
-      - "6627"
+      - "6627:6627"
       - "3772"
       - "3773"
       - "3774"
@@ -71,30 +75,28 @@ services:
       - storm
     environment:
       - NIMBUS_PORT_6627_TCP_ADDR=nimbus
-      - ZK_PORT_2181_TCP_ADDR=zk1 zk2 zk3
+      - ZK_PORT_2181_TCP_ADDR=zk1
+    volumes:
+      - /root/workspace:/root/workspace
     depends_on:
       - zk1
-      - zk2
-      - zk3
   supervisor:
     container_name: supervisor
     hostname: supervisor
     image: wurstmeister/storm-supervisor
     ports:
-      - "6700"
-      - "6701"
-      - "6702"
-      - "6703"
-      - "8000"
+      - "6700:6700"
+      - "6701:6701"
+      - "6702:6702"
+      - "6703:6703"
+      - "8000:8000"
     networks:
       - storm
     environment:
       - NIMBUS_PORT_6627_TCP_ADDR=nimbus
-      - ZK_PORT_2181_TCP_ADDR=zk1 zk2 zk3
+      - ZK_PORT_2181_TCP_ADDR=zk1
     depends_on:
       - zk1
-      - zk2
-      - zk3
       - nimbus
   ui:
     container_name: ui
@@ -106,11 +108,9 @@ services:
       - storm
     environment:
       - NIMBUS_PORT_6627_TCP_ADDR=nimbus
-      - ZK_PORT_2181_TCP_ADDR=zk1 zk2 zk3
+      - ZK_PORT_2181_TCP_ADDR=zk1
     depends_on:
       - zk1
-      - zk2
-      - zk3
       - nimbus
       - supervisor
   ses:
